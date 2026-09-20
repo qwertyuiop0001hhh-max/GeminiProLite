@@ -1,0 +1,46 @@
+name: Build Gemini Pro Lite APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "Project ZIP not found"
+            exit 1
+          fi
+          unzip -q "$ZIP_FILE" -d extracted
+          cp -r extracted/* extracted/.[!.]* . 2>/dev/null || true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Build APK
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gemini-Pro-Lite-APK
+          path: app/build/outputs/apk/debug/*.apk
